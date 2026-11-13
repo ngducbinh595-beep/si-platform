@@ -53,6 +53,15 @@ app.get('/health', (req, res) => {
 // ------------------------------------------------------------
 app.get('/api/v1/products/:sku/stock', async (req, res) => {
   try {
+    // Thêm kiểm tra đầu vào cho tham số sku (Mục 5)
+    if (!req.params.sku || req.params.sku.trim() === '') {
+      return sendError(res, {
+        code: 'VALIDATION_ERROR',
+        message: 'Ma SKU khong duoc de trong',
+        status: 400
+      }, req.correlationId);
+    }
+
     const data = await orders.checkStock(req.params.sku);
     res.json(data);
   } catch (err) {
@@ -63,17 +72,30 @@ app.get('/api/v1/products/:sku/stock', async (req, res) => {
 // ------------------------------------------------------------
 //  SCENARIO 1 - Tao don hang (bat dong bo)
 //  POST /api/v1/orders
-//  TODO: hoan thien logic trong src/process-api/orders.js
+//  Da co kiem tra co ban va duoc nang cap them chi tiet (Muc 5)
 // ------------------------------------------------------------
 app.post('/api/v1/orders', async (req, res) => {
   try {
     const { customerId, items } = req.body;
+    
+    // Kiểm tra đầu vào cơ bản và nâng cao (Mục 5)
     if (!customerId || !Array.isArray(items) || items.length === 0) {
       return sendError(res, {
         code: 'VALIDATION_ERROR',
-        message: 'Can co customerId va it nhat mot item',
+        message: 'Can co customerId va it nhat mot item hop le',
         status: 400
       }, req.correlationId);
+    }
+
+    // Kiểm tra chi tiết từng phần tử trong items (Tránh dữ liệu rác)
+    for (const item of items) {
+      if (!item.productId || typeof item.quantity !== 'number' || item.quantity <= 0) {
+        return sendError(res, {
+          code: 'VALIDATION_ERROR',
+          message: 'Moi item phai co productId va quantity la so lon hon 0',
+          status: 400
+        }, req.correlationId);
+      }
     }
 
     const order = await orders.createOrder({
@@ -103,7 +125,17 @@ app.get('/api/v1/orders/:orderId', (req, res) => {
 //  TODO: goi Ollama hoac OpenAI, kiem tra ket qua truoc khi tra ve
 // ------------------------------------------------------------
 app.post('/api/v1/ai/mapping', async (req, res) => {
-  sendError(res, { code: 'NOT_IMPLEMENTED', message: 'Chua cai dat - xem Scenario 5', status: 501 }, req.correlationId);
+  // Thêm kiểm tra đầu vào cơ bản cho AI mapping (Mục 5)
+  const { rawData } = req.body;
+  if (!rawData) {
+    return sendError(res, {
+      code: 'VALIDATION_ERROR',
+      message: 'Thieu duong dan hoac du lieu tho (rawData) de AI xu ly',
+      status: 400
+    }, req.correlationId);
+  }
+
+  sendError(res, { code: 'NOT_IMPLEMENTED', message: 'Chua cai dat hoan tat - xem Scenario 5', status: 501 }, req.correlationId);
 });
 
 // ------------------------------------------------------------
