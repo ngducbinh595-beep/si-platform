@@ -33,19 +33,13 @@ services:
           generator: uuid
           echo_downstream: true
 
-# ============================================================
-#  TODO - Scenario 2 phan xac thuc JWT
-#  Bo comment khoi duoi day khi nhom lam den phan bao mat.
-#  Tao token tai https://jwt.io  (HS256, payload co "iss": "ecommerce-web")
-# ============================================================
-#
-# consumers:
-#   - username: ecommerce-web
-#     jwt_secrets:
-#       - key: ecommerce-web
-#         secret: doi-thanh-chuoi-bi-mat-cua-nhom
-#
-# Them vao muc plugins cua service o tren:
-#       - name: jwt
-#         config:
-#           claims_to_verify: ["exp"]
+      # --- Scenario 2: Phan xac thuc JWT ---
+      - name: jwt
+        config:
+          claims_to_verify: ["exp"]
+
+consumers:
+  - username: ecommerce-web
+    jwt_secrets:
+      - key: ecommerce-web
+        secret: doi-thanh-chuoi-bi-mat-cua-nhom
