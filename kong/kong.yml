@@ -11,41 +11,46 @@ services:
       - name: stock-route
         paths: ["/api/v1/products"]
         strip_path: false
+        
       - name: orders-route
         paths: ["/api/v1/orders"]
         strip_path: false
+        # Mục 3: Bật plugin JWT để yêu cầu xác thực trước khi gọi API đơn hàng
+        plugins:
+          - name: jwt
+
       - name: ai-route
         paths: ["/api/v1/ai"]
         strip_path: false
-    plugins:
-      # --- Scenario 2: gioi han tan suat, vuot nguong tra 429 ---
-      - name: rate-limiting
-        config:
-          minute: 20          # 20 request/phut/IP - gia tri thap de demo thay ro
-          policy: local
-          limit_by: ip
-          error_message: "Vuot qua gioi han tan suat. Thu lai sau."
 
-      # --- Gan ma tuong quan de lan theo 1 request qua nhieu service ---
-      - name: correlation-id
-        config:
-          header_name: X-Correlation-Id
-          generator: uuid
-          echo_downstream: true
+      # Mục 4: Chặn truy cập trái phép vào endpoint Debug
+      - name: debug-route
+        paths: ["/api/v1/debug"]
+        strip_path: false
+        plugins:
+          - name: request-termination
+            config:
+              status_code: 403
+              message: "Truy cap bi tu choi: Endpoint debug bi cam."
 
-# ============================================================
-#  TODO - Scenario 2 phan xac thuc JWT
-#  Bo comment khoi duoi day khi nhom lam den phan bao mat.
-#  Tao token tai https://jwt.io  (HS256, payload co "iss": "ecommerce-web")
-# ============================================================
-#
-# consumers:
-#   - username: ecommerce-web
-#     jwt_secrets:
-#       - key: ecommerce-web
-#         secret: doi-thanh-chuoi-bi-mat-cua-nhom
-#
-# Them vao muc plugins cua service o tren:
-#       - name: jwt
-#         config:
-#           claims_to_verify: ["exp"]
+plugins:
+  # --- Scenario 2: gioi han tan suat, vuot nguong tra 429 ---
+  - name: rate-limiting
+    config:
+      minute: 20          # 20 request/phut/IP - gia tri thap de demo thay ro
+      policy: local
+      limit_by: ip
+      error_message: "Vuot qua gioi han tan suat. Thu lai sau."
+
+  # --- Gan ma tuong quan de lan theo 1 request qua nhieu service ---
+  - name: correlation-id
+    config:
+      header_name: X-Correlation-Id
+      generator: uuid
+      echo_downstream: true
+
+consumers:
+  - username: ecommerce-web
+    jwt_secrets:
+      - key: ecommerce-web
+        secret: doi-thanh-chuoi-bi-mat-cua-nhom
